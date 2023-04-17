@@ -70,6 +70,13 @@ bool RightKeyIsPressed = false;
 
 float timeCst = 0;
 
+float vitesse = 4.f;
+float verticalSpeed = 4.f;
+
+const float gravity = 9.81f;
+
+bool pressSpace = false;
+
 
 std::vector<glm::vec3> indexed_vertices;
 std::vector<std::vector<unsigned short> > triangles;
@@ -357,7 +364,7 @@ int main( void )
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow( 1024, 768, "TP4 - GLFW", NULL, NULL);
+    window = glfwCreateWindow( 1024, 768, "TP5 - GLFW", NULL, NULL);
     if( window == NULL ){
         fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
         getchar();
@@ -415,7 +422,7 @@ int main( void )
     /*std::string filename("cube.off");
     loadOFF(filename, indexed_vertices, indices, triangles );*/
 
-    //TP4
+    //TP5
     createPlane(indexed_vertices, indices);
     textureData = generateTextureCoords(1, resolution);
 
@@ -617,6 +624,16 @@ int main( void )
         }*/
 
 
+        if (pressSpace) {
+            float dist = vitesse * deltaTime;
+            sphere->transform.position.x += dist;
+
+            verticalSpeed -= gravity * deltaTime;
+            sphere->transform.position.y += verticalSpeed * deltaTime;
+
+            sphere->update();
+        }
+
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -765,10 +782,7 @@ void processInput(GLFWwindow *window)
     }*/
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        float distance = 4 * deltaTime;
-        sphere->transform.position.x += distance;
-        sphere->transform.position.y += distance;
-        sphere->update();
+        pressSpace = true;
     }
 
 
