@@ -37,7 +37,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-glm::vec3 camera_position   = glm::vec3(2.0f, 1.0f, 10.0f);
+glm::vec3 camera_position   = glm::vec3(3.5f, 1.0f, 10.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -290,25 +290,30 @@ vec3 calculateBarycentricCoords(vec3 point, vec3 v0, vec3 v1, vec3 v2)
 
 bool isPointInTriangle(vec3 point, vec3 v0, vec3 v1, vec3 v2)
 {
-    vec3 edge0 = v1 - v0;
-    vec3 edge1 = v2 - v1;
-    vec3 edge2 = v0 - v2;
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+    vec3 normal = cross(e1, e2);
+    float d = -dot(normal, v0);
+
+    float t = dot(normal, point) + d;
+    if (t < 0) return false;
 
     vec3 C0 = point - v0;
+    vec3 cross1 = cross(e1, C0);
+    if (dot(normal, cross1) < 0) return false;
+
     vec3 C1 = point - v1;
+    vec3 cross2 = cross(e2, C1);
+    if (dot(normal, cross2) < 0) return false;
+
     vec3 C2 = point - v2;
+    vec3 cross3 = cross(e1, C2);
+    if (dot(normal, cross3) < 0) return false;
 
-    vec3 cross0 = cross(edge0, C0);
-    vec3 cross1 = cross(edge1, C1);
-    vec3 cross2 = cross(edge2, C2);
-
-    if (dot(cross0, cross1) > 0 && dot(cross0, cross2) > 0)
-    {
-        return true;
-    }
-
-    return false;
+    return true;
 }
+
+
 
 float getHeightAtPoint(vec3 point, std::vector<vec3> vertices, std::vector<unsigned short> indices)
 {
@@ -345,7 +350,13 @@ float placeObjectOnTerrain(vec3 objectPosition, std::vector<vec3> terrainVertice
     return height;
 }
 
+bool checkCollision(vec3 object1Position, vec3 object2Position) {
+    if (object1Position.y < 0.5 + object2Position.y && object1Position.x < 5 + object2Position.x) {
+        return true;
+    }
 
+    return false;
+}
 
 int main( void )
 {
@@ -625,11 +636,28 @@ int main( void )
 
 
         if (pressSpace) {
-            float dist = vitesse * deltaTime;
-            sphere->transform.position.x += dist;
+            if (checkCollision(sphere->transform.position, terrain->transform.position)) {
+                float dist = vitesse * deltaTime;
+                sphere->transform.position.x += dist;
 
-            verticalSpeed -= gravity * deltaTime;
-            sphere->transform.position.y += verticalSpeed * deltaTime;
+                verticalSpeed = vitesse;
+
+                const float airFriction = 0.01f;
+                float airFrictionForce = airFriction * verticalSpeed;
+                verticalSpeed -= airFrictionForce;
+
+                const float attenuationCoefficient = 0.8f;
+                verticalSpeed *= attenuationCoefficient;
+                
+                sphere->transform.position.y += verticalSpeed * deltaTime;
+            }
+            else {
+                float dist = vitesse * deltaTime;
+                sphere->transform.position.x += dist;
+
+                verticalSpeed -= gravity * deltaTime;
+                sphere->transform.position.y += verticalSpeed * deltaTime;
+            }
 
             sphere->update();
         }
